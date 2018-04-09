@@ -5,6 +5,11 @@
 	-
 	(CC-BY-SA 4.0) Tommie Hansen
 	https://creativecommons.org/licenses/by-sa/4.0/
+	-
+	NOTE: Requires custom indicators found here:
+	https://github.com/Gab0/Gekko-extra-indicators
+	(c) Gabriel Araujo
+	Howto: Download + add to gekko/strategies/indicators
 */
 
 // req's
@@ -27,25 +32,25 @@ var strat = {
 		
 		// performance
 		config.backtest.batchSize = 1000; // increase performance
-		config.silent = true;
+		config.silent = true; // NOTE: You may want to set this to 'false' @ live
 		config.debug = false;
 		
 		// SMA
-		this.addTulipIndicator('maSlow', 'sma', { optInTimePeriod: this.settings.SMA_long });
-		this.addTulipIndicator('maFast', 'sma', { optInTimePeriod: this.settings.SMA_short });
+		this.addIndicator('maSlow', 'SMA', this.settings.SMA.long );
+		this.addIndicator('maFast', 'SMA', this.settings.SMA.short );
 		
 		// RSI
-		this.addTulipIndicator('BULL_RSI', 'rsi', { optInTimePeriod: this.settings.BULL_RSI });
-		this.addTulipIndicator('BEAR_RSI', 'rsi', { optInTimePeriod: this.settings.BEAR_RSI });
+		this.addIndicator('BULL_RSI', 'RSI', { interval: this.settings.BULL.rsi });
+		this.addIndicator('BEAR_RSI', 'RSI', { interval: this.settings.BEAR.rsi });
 		
 		// ADX
-		this.addTulipIndicator('ADX', 'adx', { optInTimePeriod: this.settings.ADX })
+		this.addIndicator('ADX', 'ADX', this.settings.ADX.adx );
 		
 		// MOD (RSI modifiers)
-		this.BULL_MOD_high = this.settings.BULL_MOD_high;
-		this.BULL_MOD_low = this.settings.BULL_MOD_low;
-		this.BEAR_MOD_high = this.settings.BEAR_MOD_high;
-		this.BEAR_MOD_low = this.settings.BEAR_MOD_low;
+		this.BULL_MOD_high = this.settings.BULL.mod_high;
+		this.BULL_MOD_low = this.settings.BULL.mod_low;
+		this.BEAR_MOD_high = this.settings.BEAR.mod_high;
+		this.BEAR_MOD_low = this.settings.BEAR.mod_low;
 		
 		
 		// debug stuff
@@ -116,23 +121,23 @@ var strat = {
 	check: function()
 	{
 		// get all indicators
-		let ind = this.tulipIndicators,
-			maSlow = ind.maSlow.result.result,
-			maFast = ind.maFast.result.result,
+		let ind = this.indicators,
+			maSlow = ind.maSlow.result,
+			maFast = ind.maFast.result,
 			rsi,
-			adx = ind.ADX.result.result;
-		
+			adx = ind.ADX.result;
 			
 		// BEAR TREND
+		// NOTE: maFast will always be under maSlow if maSlow can't be calculated
 		if( maFast < maSlow )
 		{
-			rsi = ind.BEAR_RSI.result.result;
-			let rsi_hi = this.settings.BEAR_RSI_high,
-				rsi_low = this.settings.BEAR_RSI_low;
+			rsi = ind.BEAR_RSI.result;
+			let rsi_hi = this.settings.BEAR.high,
+				rsi_low = this.settings.BEAR.low;
 			
 			// ADX trend strength?
-			if( adx > this.settings.ADX_high ) rsi_hi = rsi_hi + this.BEAR_MOD_high;
-			else if( adx < this.settings.ADX_low ) rsi_low = rsi_low + this.BEAR_MOD_low;
+			if( adx > this.settings.ADX.high ) rsi_hi = rsi_hi + this.BEAR_MOD_high;
+			else if( adx < this.settings.ADX.low ) rsi_low = rsi_low + this.BEAR_MOD_low;
 				
 			if( rsi > rsi_hi ) this.short();
 			else if( rsi < rsi_low ) this.long();
@@ -143,13 +148,13 @@ var strat = {
 		// BULL TREND
 		else
 		{
-			rsi = ind.BULL_RSI.result.result;
-			let rsi_hi = this.settings.BULL_RSI_high,
-				rsi_low = this.settings.BULL_RSI_low;
+			rsi = ind.BULL_RSI.result;
+			let rsi_hi = this.settings.BULL.high,
+				rsi_low = this.settings.BULL.low;
 			
 			// ADX trend strength?
-			if( adx > this.settings.ADX_high ) rsi_hi = rsi_hi + this.BULL_MOD_high;		
-			else if( adx < this.settings.ADX_low ) rsi_low = rsi_low + this.BULL_MOD_low;
+			if( adx > this.settings.ADX.high ) rsi_hi = rsi_hi + this.BULL_MOD_high;		
+			else if( adx < this.settings.ADX.low ) rsi_low = rsi_low + this.BULL_MOD_low;
 				
 			if( rsi > rsi_hi ) this.short();
 			else if( rsi < rsi_low )  this.long();
